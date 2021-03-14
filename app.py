@@ -105,6 +105,19 @@ def registration():
             return render_template('profile.html')
     return render_template('registration.html')
 
+
+@app.route('/delete', methods=['POST', 'GET'])
+def delete():
+    if request.method == 'POST':
+        user_name = request.form['user_name']
+        found_user = users.query.filter_by(name=user_name).delete()
+        db.session.commit()
+        flash(f'{user_name} have been delete')
+
+    return render_template('delete.html')
+
+
+
 if __name__ == '__main__':
     db.create_all()
     app.run()
