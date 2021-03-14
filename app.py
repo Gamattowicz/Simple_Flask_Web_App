@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://users.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(minutes=5)
 
@@ -38,30 +38,37 @@ def login():
         name = request.form['nm']
         session['name'] = name
         flash('Login Successful!')
-        return redirect(url_for('welcome'))
+        return redirect(url_for('profile'))
     else:
         if 'name' in session:
             flash('Already Logged In!')
-            return redirect(url_for('welcome'))
+            return redirect(url_for('profile'))
 
         return render_template('login.html')
 
 
-@app.route('/welcome', methods=['POST', 'GET'])
-def welcome():
+@app.route('/profile', methods=['POST', 'GET'])
+def profile():
     email = None
+    city = None
     if 'name' in session:
         name = session['name']
 
         if request.method == 'POST':
             email = request.form['email']
             session['email'] = email
-            flash('Email was saved!')
+            city = request.form['city']
+            session['city'] = city
+            found_user = users.query.filter_by(name=name).first()
+            found_user.email = email
+            found_user.city = city
+            db.session.commit()
+            flash('Email and city were saved!')
         else:
             if 'email' in session:
                 email = session['email']
 
-        return render_template('welcome.html', email=email)
+        return render_template('profile.html', email=email)
     else:
         flash('You are not logged in!')
         return redirect(url_for('login'))
@@ -73,6 +80,24 @@ def logout():
     session.pop('name', None)
     session.pop('email', None)
     return redirect(url_for('login'))
+
+
+@app.route('/registration', methods=['POST', 'GET'])
+def registration():
+    if request.method == 'POST':
+        session.permanent = True
+        name = request.form['name']
+        session['name'] = name
+
+        found_user = users.query.filter_by(name=name).first()
+        if found_user:
+            session['email'] = found_user.email
+        else:
+            nm = users(name, '', '')
+            db.session.add(nm)
+            db.session.commit()
+
+    return render_template('registration.html')
 
 
 if __name__ == '__main__':
