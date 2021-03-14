@@ -31,6 +31,11 @@ def home():
     return render_template('home.html')
 
 
+@app.route('/view')
+def view():
+    return render_template('view.html', values=users.query.all())
+
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -79,6 +84,7 @@ def logout():
     flash('You have been logout!', 'info')
     session.pop('name', None)
     session.pop('email', None)
+    session.pop('city', None)
     return redirect(url_for('login'))
 
 
@@ -88,17 +94,16 @@ def registration():
         session.permanent = True
         name = request.form['name']
         session['name'] = name
-
         found_user = users.query.filter_by(name=name).first()
         if found_user:
-            session['email'] = found_user.email
+            flash(f'User {name} already exists. Try another name.')
         else:
+            flash('Registration Successful!')
             nm = users(name, '', '')
             db.session.add(nm)
             db.session.commit()
-
+            return render_template('profile.html')
     return render_template('registration.html')
-
 
 if __name__ == '__main__':
     db.create_all()
