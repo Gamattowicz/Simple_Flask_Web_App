@@ -48,35 +48,7 @@ def login():
         if 'name' in session:
             flash('Already Logged In!')
             return redirect(url_for('profile'))
-
         return render_template('login.html')
-
-
-@app.route('/profile', methods=['POST', 'GET'])
-def profile():
-    email = None
-    city = None
-    if 'name' in session:
-        name = session['name']
-
-        if request.method == 'POST':
-            email = request.form['email']
-            session['email'] = email
-            city = request.form['city']
-            session['city'] = city
-            found_user = users.query.filter_by(name=name).first()
-            found_user.email = email
-            found_user.city = city
-            db.session.commit()
-            flash('Email and city were saved!')
-        else:
-            if 'email' in session:
-                email = session['email']
-
-        return render_template('profile.html', email=email)
-    else:
-        flash('You are not logged in!')
-        return redirect(url_for('login'))
 
 
 @app.route('/logout')
@@ -106,16 +78,52 @@ def registration():
     return render_template('registration.html')
 
 
+@app.route('/profile', methods=['POST', 'GET'])
+def profile():
+    email = None
+    city = None
+    if 'name' in session:
+        name = session['name']
+        if request.method == 'POST':
+            email = request.form['email']
+            session['email'] = email
+            city = request.form['city']
+            session['city'] = city
+            found_user = users.query.filter_by(name=name).first()
+            found_user.email = email
+            found_user.city = city
+            db.session.commit()
+            if found_user.city and found_user.email:
+                flash('Email and city were changed!')
+            elif found_user.city and not found_user.email:
+                flash('Only city was changed!')
+            elif found_user.email and not found_user.city:
+                flash('Only email was changed!')
+            else:
+                flash('Nothing was changed!')
+        else:
+            if 'email' in session:
+                email = session['email']
+        return render_template('profile.html', name=name, email=email,
+                               city=city)
+    else:
+        flash('You are not logged in!')
+        return redirect(url_for('login'))
+
+
 @app.route('/delete', methods=['POST', 'GET'])
 def delete():
     if request.method == 'POST':
         user_name = request.form['user_name']
-        found_user = users.query.filter_by(name=user_name).delete()
-        db.session.commit()
-        flash(f'{user_name} have been delete')
+        found_user = users.query.filter_by(name=user_name).first()
+        if found_user:
+            users.query.filter_by(name=user_name).delete()
+            db.session.commit()
+            flash(f'{user_name} have been delete')
+        else:
+            flash(f'{user_name} not exists')
 
     return render_template('delete.html')
-
 
 
 if __name__ == '__main__':
