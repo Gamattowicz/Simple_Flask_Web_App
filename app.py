@@ -3,13 +3,16 @@ from flask import Flask, render_template, request, redirect, url_for, \
 from datetime import timedelta
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
+from second import second
 
 
 app = Flask(__name__)
+app.register_blueprint(second, url_prefix='/second')
 app.config.from_object(Config)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(minutes=5)
+
 
 db = SQLAlchemy(app)
 
