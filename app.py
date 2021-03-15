@@ -40,7 +40,7 @@ def view():
 def login():
     if request.method == 'POST':
         session.permanent = True
-        name = request.form['nm']
+        name = request.form['name']
         session['name'] = name
         flash('Login Successful!')
         return redirect(url_for('profile'))
@@ -70,11 +70,12 @@ def registration():
         if found_user:
             flash(f'User {name} already exists. Try another name.')
         else:
-            flash('Registration Successful!')
             nm = users(name, '', '')
             db.session.add(nm)
             db.session.commit()
-            return render_template('profile.html')
+            flash('Registration Successful!')
+            session.pop('name', None)
+            return redirect(url_for('login'))
     return render_template('registration.html')
 
 
@@ -91,6 +92,8 @@ def profile():
             session['city'] = city
             found_user = users.query.filter_by(name=name).first()
             found_user.email = email
+            db.session.commit()
+            found_user = users.query.filter_by(name=name).first()
             found_user.city = city
             db.session.commit()
             if found_user.city and found_user.email:
@@ -102,10 +105,14 @@ def profile():
             else:
                 flash('Nothing was changed!')
         else:
-            if 'email' in session:
+            if 'city' in session and 'email' in session:
+                city = session['city']
                 email = session['email']
-        return render_template('profile.html', name=name, email=email,
-                               city=city)
+            elif 'city' in session:
+                city = session['city']
+            elif 'email' in session:
+                email = session['email']
+        return render_template('profile.html', city=city, email=email)
     else:
         flash('You are not logged in!')
         return redirect(url_for('login'))
@@ -122,7 +129,6 @@ def delete():
             flash(f'{user_name} have been delete')
         else:
             flash(f'{user_name} not exists')
-
     return render_template('delete.html')
 
 
